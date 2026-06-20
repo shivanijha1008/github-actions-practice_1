@@ -7,8 +7,8 @@ jobs:
   code:
     runs-on: ubuntu-latest
     steps:
-      -name: Clone my code
-       run: echo "Cloning the code Shivani"
+      - name: Clone my code
+        run: echo "Cloning the code Shivani"
 
   build:
     needs: [code]
@@ -27,5 +27,5 @@ jobs:
     needs: [build,test]
     runs-on: ubuntu-latest
     steps:
-     - name: Deploying on the machine
-       run: echo "Deploying the code"
+      - name: Deploying on the machine
+        run: echo "Deploying the code"
