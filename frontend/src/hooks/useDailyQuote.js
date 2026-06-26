@@ -7,8 +7,7 @@ export function useDailyQuote() {
   const [quote, setQuote] = useState(() => {
     try {
       const cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      const today = new Date().toISOString().slice(0, 10);
-      if (cached && cached.date === today) return cached.data;
+      if (cached?.data) return cached.data;
     } catch {
       /* ignore */
     }
@@ -16,22 +15,15 @@ export function useDailyQuote() {
   });
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    let cached = null;
-    try {
-      cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    } catch {
-      /* ignore */
-    }
-    if (cached?.date === today) return;
+    // Always refresh on visit
     api
       .getQuote()
       .then((data) => {
         setQuote(data);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: today, data }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ data }));
       })
       .catch(() => {
-        /* fallback already set */
+        /* keep cached/fallback */
       });
   }, []);
 
