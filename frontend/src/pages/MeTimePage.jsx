@@ -48,7 +48,7 @@ const Breather = ({ item, onClose }) => {
         <p className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-70 mb-2">{item.title}</p>
         <div className="relative w-48 h-48 mx-auto my-6 flex items-center justify-center">
           <div
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full pointer-events-none"
             style={{
               background: "radial-gradient(circle, rgba(255,45,146,0.45), rgba(176,38,255,0.15) 70%)",
               transform: `scale(${scale})`,
