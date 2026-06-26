@@ -1,9 +1,10 @@
-import { ListTodo, ShoppingCart, Heart } from "lucide-react";
+import { ListTodo, ShoppingCart, Heart, BookHeart } from "lucide-react";
 
 const NAV = [
   { id: "tasks", label: "Tasks", icon: ListTodo },
   { id: "shopping", label: "Shopping", icon: ShoppingCart },
   { id: "metime", label: "Me Time", icon: Heart },
+  { id: "diary", label: "Diary", icon: BookHeart },
 ];
 
 export const BottomNav = ({ active, onChange }) => (

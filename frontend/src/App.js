@@ -16,8 +16,10 @@ import { ShareModal } from "./components/ShareModal";
 import { SmartSuggestions } from "./components/SmartSuggestions";
 import { StreakBadge } from "./components/StreakBadge";
 import { ShareStreakButton } from "./components/ShareStreakButton";
+import { useDiary } from "./hooks/useDiary";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { MeTimePage } from "./pages/MeTimePage";
+import { DiaryPage } from "./pages/DiaryPage";
 import { bumpStreak } from "./lib/streak";
 import { todayDateLabel } from "./lib/utils-app";
 
@@ -35,6 +37,7 @@ function GoogleSignInButton() { return null; }
 function TasksView({
   tasks, online, addTask, updateTask, deleteTask, reorderTasks, logSession,
   activeTask, setActiveTask, setModalOpen, setEditing, setShareTarget,
+  dayMode, setDayMode,
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -94,6 +97,15 @@ function TasksView({
             {online ? "Online" : "Offline"}
           </div>
           <StreakBadge />
+          <button
+            data-testid="day-mode-toggle"
+            onClick={() => setDayMode((d) => !d)}
+            className="glass w-10 h-10 rounded-full flex items-center justify-center text-base"
+            title={dayMode ? "Switch to Night" : "Switch to Day"}
+            aria-label="Toggle day mode"
+          >
+            {dayMode ? "🌙" : "☀️"}
+          </button>
           <button
             data-testid="add-task-btn"
             onClick={() => { setEditing(null); setModalOpen(true); }}
@@ -195,8 +207,16 @@ function App() {
   const { tasks, online, addTask, updateTask, deleteTask, reorderTasks, logSession } = useTasks();
   const shopping = useShopping(online);
   const meTime = useMeTime(online);
+  const diary = useDiary();
 
   const [tab, setTab] = useState("tasks");
+  const [dayMode, setDayMode] = useState(() => localStorage.getItem("lumora.dayMode") === "1");
+
+  useEffect(() => {
+    if (dayMode) document.body.classList.add("day-mode");
+    else document.body.classList.remove("day-mode");
+    localStorage.setItem("lumora.dayMode", dayMode ? "1" : "0");
+  }, [dayMode]);
   const [activeTask, setActiveTask] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -239,6 +259,8 @@ function App() {
             setModalOpen={setModalOpen}
             setEditing={setEditing}
             setShareTarget={setShareTarget}
+            dayMode={dayMode}
+            setDayMode={setDayMode}
           />
         )}
         {tab === "shopping" && (
@@ -270,6 +292,9 @@ function App() {
             onUpdate={meTime.update}
             onRemove={meTime.remove}
           />
+        )}
+        {tab === "diary" && (
+          <DiaryPage entries={diary.entries} onAdd={diary.add} onRemove={diary.remove} />
         )}
       </div>
 

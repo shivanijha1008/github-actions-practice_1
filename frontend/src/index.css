@@ -213,6 +213,80 @@ body {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* ---- DAY MODE (subtle pastel) ---- */
+body.day-mode {
+    background:
+        radial-gradient(ellipse at top left, rgba(255, 182, 217, 0.55), transparent 55%),
+        radial-gradient(ellipse at bottom right, rgba(255, 215, 178, 0.55), transparent 55%),
+        linear-gradient(160deg, #FFF6FA 0%, #FFEDE3 55%, #FDF7FF 100%);
+    color: #2B1530;
+}
+body.day-mode {
+    --text: #2B1530;
+    --muted: #6B5A78;
+    --surface: rgba(255, 255, 255, 0.55);
+    --surface-hi: rgba(255, 255, 255, 0.75);
+    --border-c: rgba(160, 120, 180, 0.22);
+    --border-strong: rgba(160, 120, 180, 0.38);
+    --pink: #E8478A;
+    --pink-soft: #FF8DBA;
+    --magenta: #9D4BD8;
+}
+body.day-mode .gradient-text-pink {
+    background: linear-gradient(90deg, #E8478A 0%, #F4894A 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+body.day-mode .gradient-text-warm {
+    background: linear-gradient(90deg, #F4A93A 0%, #F4894A 50%, #E8478A 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+body.day-mode .glass {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(160, 120, 180, 0.22);
+    box-shadow: 0 4px 20px rgba(160, 120, 180, 0.08);
+}
+body.day-mode .glass-hi {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(160, 120, 180, 0.32);
+    box-shadow: 0 8px 30px rgba(160, 120, 180, 0.12);
+}
+body.day-mode .input-glass {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(160, 120, 180, 0.25);
+    color: #2B1530;
+}
+body.day-mode .input-glass::placeholder { color: #9B86A8; }
+body.day-mode .btn-ghost {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(160, 120, 180, 0.25);
+    color: #2B1530;
+}
+body.day-mode .btn-pink {
+    background: linear-gradient(135deg, #E8478A 0%, #9D4BD8 100%);
+    box-shadow: 0 6px 22px rgba(232, 71, 138, 0.32);
+}
+body.day-mode ::-webkit-scrollbar-thumb {
+    background: rgba(160, 120, 180, 0.3);
+}
+body.day-mode .seg {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(160, 120, 180, 0.2);
+}
+body.day-mode .seg button { color: #6B5A78; }
+body.day-mode .seg button.active {
+    background: linear-gradient(135deg, #E8478A 0%, #9D4BD8 100%);
+    color: white;
+}
+body.day-mode .progress-fill {
+    background: linear-gradient(90deg, #E8478A 0%, #F4894A 60%, #F4A93A 100%);
+    box-shadow: 0 0 12px rgba(244, 137, 74, 0.35);
+}
+body.day-mode .task-bar { opacity: .85; }
+
 /* Mobile bottom nav safe area */
 .bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0);
