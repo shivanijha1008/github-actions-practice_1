@@ -15,6 +15,7 @@ import { BottomNav } from "./components/BottomNav";
 import { ShareModal } from "./components/ShareModal";
 import { SmartSuggestions } from "./components/SmartSuggestions";
 import { StreakBadge } from "./components/StreakBadge";
+import { ShareStreakButton } from "./components/ShareStreakButton";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { MeTimePage } from "./pages/MeTimePage";
 import { bumpStreak } from "./lib/streak";
@@ -152,6 +153,7 @@ function TasksView({
       )}
 
       <SmartSuggestions onAdd={handleQuickAdd} />
+      <ShareStreakButton />
 
       {filtered.length === 0 ? (
         <div data-testid="empty-state" className="glass p-10 text-center opacity-70">
