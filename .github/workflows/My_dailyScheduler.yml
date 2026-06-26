@@ -1,0 +1,11 @@
+name: Daily Scheduler
+
+on: workflow_dispatch
+
+jobs: 
+  
+  Instructions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open-instructions
+        run: cat README.md
