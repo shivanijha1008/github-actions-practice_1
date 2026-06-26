@@ -237,7 +237,13 @@ function App() {
         )}
         {tab === "shopping" && (
           <>
-            <ShoppingPage {...shopping} onClearPurchased={shopping.clearPurchased} />
+            <ShoppingPage
+              items={shopping.items}
+              onAdd={shopping.add}
+              onToggle={shopping.toggle}
+              onRemove={shopping.remove}
+              onClearPurchased={shopping.clearPurchased}
+            />
             {shopping.items.length > 0 && (
               <div className="mt-4">
                 <button
@@ -251,7 +257,14 @@ function App() {
             )}
           </>
         )}
-        {tab === "metime" && <MeTimePage {...meTime} />}
+        {tab === "metime" && (
+          <MeTimePage
+            items={meTime.items}
+            onAdd={meTime.add}
+            onUpdate={meTime.update}
+            onRemove={meTime.remove}
+          />
+        )}
         {tab === "timer" && (
           <>
             <QuoteBanner />
