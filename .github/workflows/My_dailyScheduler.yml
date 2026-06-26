@@ -8,4 +8,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Open-instructions
-        run: cat /github-actions-practice_1/.github/workflows/README.md
+        run: echo "Hello, Welcome to Daily Scheduler"
