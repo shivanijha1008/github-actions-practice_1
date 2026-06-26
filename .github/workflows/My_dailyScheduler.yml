@@ -8,4 +8,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Open-instructions
-        run: cat README.md
+        run: cat /github-actions-practice_1/.github/workflows/README.md
