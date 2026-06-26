@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "@/App.css";
 import { Reorder } from "framer-motion";
-import { Plus, Search, Wifi, WifiOff, Filter, LogIn, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Wifi, WifiOff, Filter } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 import { useTasks } from "./hooks/useTasks";
@@ -13,10 +13,11 @@ import { TaskFormModal } from "./components/TaskFormModal";
 import { QuoteBanner } from "./components/QuoteBanner";
 import { BottomNav } from "./components/BottomNav";
 import { ShareModal } from "./components/ShareModal";
+import { SmartSuggestions } from "./components/SmartSuggestions";
+import { StreakBadge } from "./components/StreakBadge";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { MeTimePage } from "./pages/MeTimePage";
-import { CalendarPage } from "./pages/CalendarPage";
-import { api } from "./lib/api";
+import { bumpStreak } from "./lib/streak";
 import { todayDateLabel } from "./lib/utils-app";
 
 function StatChip({ label, value, color, testid }) {
@@ -28,43 +29,7 @@ function StatChip({ label, value, color, testid }) {
   );
 }
 
-function GoogleSignInButton() {
-  const [status, setStatus] = useState({ configured: false, connected: false });
-  const [email, setEmail] = useState(() => localStorage.getItem("gcal_email") || "");
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const ge = url.searchParams.get("gcal_email");
-    if (ge) {
-      setEmail(ge);
-      localStorage.setItem("gcal_email", ge);
-    }
-    api.googleStatus(ge || email || undefined).then(setStatus).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const connect = async () => {
-    try {
-      const { authorization_url } = await api.googleLogin();
-      window.location.href = authorization_url;
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Google sign-in not configured on server");
-    }
-  };
-
-  if (status.connected) {
-    return (
-      <div data-testid="google-connected-pill" className="glass px-3 h-10 flex items-center gap-1.5 text-xs font-bold" style={{ color: "#5FE3A1" }}>
-        <CheckCircle2 size={13} strokeWidth={3} /> Google
-      </div>
-    );
-  }
-  return (
-    <button data-testid="google-signin-btn" onClick={connect} className="btn-pill btn-ghost inline-flex items-center gap-1.5 text-xs">
-      <LogIn size={13} strokeWidth={3} /> Sign in with Google
-    </button>
-  );
-}
+function GoogleSignInButton() { return null; }
 
 function TasksView({
   tasks, online, addTask, updateTask, deleteTask, reorderTasks, logSession,
@@ -94,18 +59,15 @@ function TasksView({
     return list;
   }, [tasks, query, filter]);
 
-  const handleToggle = (task) =>
-    updateTask(task.id, { completed: !task.completed, completed_at: !task.completed ? new Date().toISOString() : null });
+  const handleToggle = (task) => {
+    const willComplete = !task.completed;
+    updateTask(task.id, { completed: willComplete, completed_at: willComplete ? new Date().toISOString() : null });
+    if (willComplete) bumpStreak();
+  };
 
-  const pushToCalendar = async (task) => {
-    const email = localStorage.getItem("gcal_email");
-    if (!email) return toast.error("Connect Google Calendar first (Calendar tab)");
-    try {
-      await api.calendarPush(email, task.id);
-      toast.success("Added to Google Calendar 📅");
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || "Failed to add to calendar");
-    }
+  const handleQuickAdd = (data) => {
+    addTask(data);
+    toast.success(`Added: ${data.title}`);
   };
 
   return (
@@ -114,12 +76,14 @@ function TasksView({
 
       <div className="flex items-end justify-between mb-4 gap-3 flex-wrap">
         <div className="slide-up">
-          <div className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-60 mb-1">{todayDateLabel()}</div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-60 mb-1">
+            <span className="gradient-text-pink font-display tracking-[0.2em]">LUMORA</span> · {todayDateLabel()}
+          </div>
           <h1 className="font-display text-5xl md:text-6xl leading-[0.95]">
             <span className="gradient-text-pink">My Day</span>
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div
             data-testid="online-status"
             className="glass px-3 h-10 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
@@ -128,6 +92,7 @@ function TasksView({
             {online ? <Wifi size={13} strokeWidth={3} /> : <WifiOff size={13} strokeWidth={3} />}
             {online ? "Online" : "Offline"}
           </div>
+          <StreakBadge />
           <button
             data-testid="add-task-btn"
             onClick={() => { setEditing(null); setModalOpen(true); }}
@@ -186,6 +151,8 @@ function TasksView({
         </div>
       )}
 
+      <SmartSuggestions onAdd={handleQuickAdd} />
+
       {filtered.length === 0 ? (
         <div data-testid="empty-state" className="glass p-10 text-center opacity-70">
           <Filter className="mx-auto mb-2 opacity-50" size={28} strokeWidth={2.5} />
@@ -213,7 +180,6 @@ function TasksView({
               onDelete={(t) => { deleteTask(t.id); if (activeTask?.id === t.id) setActiveTask(null); }}
               onStartTimer={(t) => setActiveTask(t)}
               onShare={(t) => setShareTarget(t)}
-              onPushCalendar={pushToCalendar}
               isActive={activeTask?.id === task.id}
             />
           ))}
@@ -303,7 +269,6 @@ function App() {
             onRemove={meTime.remove}
           />
         )}
-        {tab === "calendar" && <CalendarPage />}
       </div>
 
       <BottomNav active={tab} onChange={setTab} />

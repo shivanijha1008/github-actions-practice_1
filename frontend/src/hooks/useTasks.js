@@ -54,6 +54,36 @@ export function useTasks() {
     }
   }, [flushPending, persist]);
 
+  // Daily midnight reset for recurring tasks (idempotent per day)
+  useEffect(() => {
+    const RESET_KEY = "scheduler.lastResetDate";
+    const today = new Date().toISOString().slice(0, 10);
+    const last = localStorage.getItem(RESET_KEY);
+    if (last === today) return;
+    const current = storage.getTasks();
+    let changed = false;
+    const reset = current.map((t) => {
+      if (t.recurring && t.completed) {
+        changed = true;
+        return { ...t, completed: false, completed_at: null, elapsed_seconds: 0 };
+      }
+      return t;
+    });
+    if (changed) {
+      setTasks(reset);
+      storage.setTasks(reset);
+      // best-effort sync each reset to backend (fire and forget)
+      reset
+        .filter((t) => t.recurring)
+        .forEach((t) => {
+          api
+            .updateTask(t.id, { completed: false, completed_at: null, elapsed_seconds: 0 })
+            .catch(() => storage.queueOp({ type: "update", id: t.id, patch: { completed: false, completed_at: null, elapsed_seconds: 0 } }));
+        });
+    }
+    localStorage.setItem(RESET_KEY, today);
+  }, []);
+
   useEffect(() => {
     const checkAndSync = async () => {
       const ok = await isBackendOnline();

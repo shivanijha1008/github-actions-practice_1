@@ -1,10 +1,10 @@
 import { Reorder, useDragControls } from "framer-motion";
-import { Check, Clock, GripVertical, Pencil, Trash2, Play, Repeat, Tag, Share2, CalendarPlus } from "lucide-react";
+import { Check, Clock, GripVertical, Pencil, Trash2, Play, Repeat, Tag, Share2 } from "lucide-react";
 
 const PRI_CLASS = { high: "pri-high", medium: "pri-medium", low: "pri-low" };
 const BAR_COLOR = { high: "#FF2D92", medium: "#FFD24A", low: "#6FA8FF" };
 
-export const TaskCard = ({ task, onToggle, onEdit, onDelete, onStartTimer, onShare, onPushCalendar, isActive }) => {
+export const TaskCard = ({ task, onToggle, onEdit, onDelete, onStartTimer, onShare, isActive }) => {
   const controls = useDragControls();
   return (
     <Reorder.Item
@@ -107,9 +107,6 @@ export const TaskCard = ({ task, onToggle, onEdit, onDelete, onStartTimer, onSha
         </button>
         <button data-testid={`share-task-${task.id}`} onClick={() => onShare(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Share">
           <Share2 size={12} strokeWidth={2.5} />
-        </button>
-        <button data-testid={`gcal-task-${task.id}`} onClick={() => onPushCalendar(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Calendar">
-          <CalendarPlus size={12} strokeWidth={2.5} />
         </button>
         <button data-testid={`edit-task-${task.id}`} onClick={() => onEdit(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Edit">
           <Pencil size={12} strokeWidth={2.5} />
