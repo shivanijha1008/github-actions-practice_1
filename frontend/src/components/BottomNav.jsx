@@ -1,10 +1,9 @@
-import { ListTodo, ShoppingCart, Heart, Timer, Calendar } from "lucide-react";
+import { ListTodo, ShoppingCart, Heart, Calendar } from "lucide-react";
 
 const NAV = [
   { id: "tasks", label: "Tasks", icon: ListTodo },
   { id: "shopping", label: "Shopping", icon: ShoppingCart },
   { id: "metime", label: "Me Time", icon: Heart },
-  { id: "timer", label: "Timer", icon: Timer },
   { id: "calendar", label: "Calendar", icon: Calendar },
 ];
 

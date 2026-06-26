@@ -87,59 +87,42 @@ export const TaskCard = ({ task, onToggle, onEdit, onDelete, onStartTimer, onSha
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-1.5">
-          <button
-            data-testid={`start-timer-${task.id}`}
-            onClick={() => onStartTimer(task)}
-            disabled={task.completed}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
-            style={{
-              background: "linear-gradient(135deg, #FF2D92, #B026FF)",
-              boxShadow: "0 4px 14px rgba(255,45,146,0.45)",
-            }}
-            aria-label="Start"
-          >
-            <Play size={13} strokeWidth={3} className="text-white" />
-          </button>
-          <button
-            data-testid={`share-task-${task.id}`}
-            onClick={() => onShare(task)}
-            className="w-9 h-9 rounded-full flex items-center justify-center glass"
-            aria-label="Share"
-          >
-            <Share2 size={13} strokeWidth={2.5} />
-          </button>
-          <button
-            data-testid={`gcal-task-${task.id}`}
-            onClick={() => onPushCalendar(task)}
-            className="w-9 h-9 rounded-full flex items-center justify-center glass"
-            aria-label="Add to Calendar"
-          >
-            <CalendarPlus size={13} strokeWidth={2.5} />
-          </button>
-          <button
-            data-testid={`edit-task-${task.id}`}
-            onClick={() => onEdit(task)}
-            className="w-9 h-9 rounded-full flex items-center justify-center glass"
-            aria-label="Edit"
-          >
-            <Pencil size={13} strokeWidth={2.5} />
-          </button>
-          <button
-            data-testid={`delete-task-${task.id}`}
-            onClick={() => onDelete(task)}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{
-              background: "rgba(255, 45, 146, 0.18)",
-              border: "1px solid rgba(255, 45, 146, 0.4)",
-              color: "#FF6BB4",
-            }}
-            aria-label="Delete"
-          >
-            <Trash2 size={13} strokeWidth={2.5} />
-          </button>
-        </div>
+      {/* Horizontal action row */}
+      <div className="flex items-center justify-end gap-1.5 mt-3 pl-3 flex-wrap">
+        <button
+          data-testid={`start-timer-${task.id}`}
+          onClick={() => onStartTimer(task)}
+          disabled={task.completed}
+          className="h-8 px-3 rounded-full inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30"
+          style={{
+            background: "linear-gradient(135deg, #FF2D92, #B026FF)",
+            color: "white",
+            boxShadow: "0 4px 14px rgba(255,45,146,0.4)",
+          }}
+          aria-label="Start"
+        >
+          <Play size={12} strokeWidth={3} /> Start
+        </button>
+        <button data-testid={`share-task-${task.id}`} onClick={() => onShare(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Share">
+          <Share2 size={12} strokeWidth={2.5} />
+        </button>
+        <button data-testid={`gcal-task-${task.id}`} onClick={() => onPushCalendar(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Calendar">
+          <CalendarPlus size={12} strokeWidth={2.5} />
+        </button>
+        <button data-testid={`edit-task-${task.id}`} onClick={() => onEdit(task)} className="w-8 h-8 rounded-full flex items-center justify-center glass" aria-label="Edit">
+          <Pencil size={12} strokeWidth={2.5} />
+        </button>
+        <button
+          data-testid={`delete-task-${task.id}`}
+          onClick={() => onDelete(task)}
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(255,45,146,0.18)", border: "1px solid rgba(255,45,146,0.4)", color: "#FF6BB4" }}
+          aria-label="Delete"
+        >
+          <Trash2 size={12} strokeWidth={2.5} />
+        </button>
       </div>
     </Reorder.Item>
   );

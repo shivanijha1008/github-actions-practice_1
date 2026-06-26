@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "@/App.css";
 import { Reorder } from "framer-motion";
-import { Plus, Search, Wifi, WifiOff, Filter } from "lucide-react";
+import { Plus, Search, Wifi, WifiOff, Filter, LogIn, CheckCircle2 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 import { useTasks } from "./hooks/useTasks";
@@ -25,6 +25,44 @@ function StatChip({ label, value, color, testid }) {
       <div className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-1">{label}</div>
       <div className="font-display text-3xl" style={{ color }}>{value}</div>
     </div>
+  );
+}
+
+function GoogleSignInButton() {
+  const [status, setStatus] = useState({ configured: false, connected: false });
+  const [email, setEmail] = useState(() => localStorage.getItem("gcal_email") || "");
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const ge = url.searchParams.get("gcal_email");
+    if (ge) {
+      setEmail(ge);
+      localStorage.setItem("gcal_email", ge);
+    }
+    api.googleStatus(ge || email || undefined).then(setStatus).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connect = async () => {
+    try {
+      const { authorization_url } = await api.googleLogin();
+      window.location.href = authorization_url;
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Google sign-in not configured on server");
+    }
+  };
+
+  if (status.connected) {
+    return (
+      <div data-testid="google-connected-pill" className="glass px-3 h-10 flex items-center gap-1.5 text-xs font-bold" style={{ color: "#5FE3A1" }}>
+        <CheckCircle2 size={13} strokeWidth={3} /> Google
+      </div>
+    );
+  }
+  return (
+    <button data-testid="google-signin-btn" onClick={connect} className="btn-pill btn-ghost inline-flex items-center gap-1.5 text-xs">
+      <LogIn size={13} strokeWidth={3} /> Sign in with Google
+    </button>
   );
 }
 
@@ -264,20 +302,6 @@ function App() {
             onUpdate={meTime.update}
             onRemove={meTime.remove}
           />
-        )}
-        {tab === "timer" && (
-          <>
-            <QuoteBanner />
-            <h1 className="font-display text-4xl md:text-5xl mb-3 gradient-text-pink">Timer</h1>
-            <p className="text-sm opacity-70 mb-5">Pick a task from the Tasks tab and tap ▶ to focus.</p>
-            {activeTask ? (
-              <TimerWidget task={activeTask} onClose={() => setActiveTask(null)} onLogSession={logSession} onUpdateTask={updateTask} />
-            ) : (
-              <div className="glass p-10 text-center opacity-70" data-testid="timer-empty">
-                No active timer. Go to <button className="underline" onClick={() => setTab("tasks")}>Tasks</button> and start one.
-              </div>
-            )}
-          </>
         )}
         {tab === "calendar" && <CalendarPage />}
       </div>
