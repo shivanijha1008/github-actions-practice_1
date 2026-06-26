@@ -51,7 +51,8 @@ export function playBeep() {
       o.stop();
       ctx.close();
     }, 600);
-  } catch {
-    /* noop */
+  } catch (err) {
+    // WebAudio unavailable (e.g., no user gesture yet, unsupported browser)
+    console.warn("[playBeep] audio context unavailable:", err?.message || err);
   }
 }

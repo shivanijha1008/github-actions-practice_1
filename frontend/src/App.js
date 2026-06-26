@@ -1,35 +1,44 @@
 import { useMemo, useState } from "react";
 import "@/App.css";
 import { Reorder } from "framer-motion";
-import { Plus, Search, Wifi, WifiOff, Filter, ListChecks } from "lucide-react";
+import { Plus, Search, Wifi, WifiOff, Filter } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
 import { useTasks } from "./hooks/useTasks";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { useShopping } from "./hooks/useShopping";
+import { useMeTime } from "./hooks/useMeTime";
 import { TaskCard } from "./components/TaskCard";
 import { TimerWidget } from "./components/TimerWidget";
 import { TaskFormModal } from "./components/TaskFormModal";
-import { StatsPanel } from "./components/StatsPanel";
-import { EmptyState } from "./components/EmptyState";
+import { QuoteBanner } from "./components/QuoteBanner";
+import { BottomNav } from "./components/BottomNav";
+import { ShareModal } from "./components/ShareModal";
+import { ShoppingPage } from "./pages/ShoppingPage";
+import { MeTimePage } from "./pages/MeTimePage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { api } from "./lib/api";
 import { todayDateLabel } from "./lib/utils-app";
 
-function App() {
-  const {
-    tasks,
-    online,
-    syncing,
-    addTask,
-    updateTask,
-    deleteTask,
-    reorderTasks,
-    logSession,
-  } = useTasks();
+function StatChip({ label, value, color, testid }) {
+  return (
+    <div data-testid={testid} className="glass lift p-4 flex-1 min-w-[88px]">
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-1">{label}</div>
+      <div className="font-display text-3xl" style={{ color }}>{value}</div>
+    </div>
+  );
+}
 
-  const [activeTask, setActiveTask] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+function TasksView({
+  tasks, online, addTask, updateTask, deleteTask, reorderTasks, logSession,
+  activeTask, setActiveTask, setModalOpen, setEditing, setShareTarget,
+}) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all"); // all | active | done
+  const [filter, setFilter] = useState("all");
+
+  const total = tasks.length;
+  const done = tasks.filter((t) => t.completed).length;
+  const active = total - done;
+  const pct = total ? Math.round((done / total) * 100) : 0;
 
   const filtered = useMemo(() => {
     let list = [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -47,248 +56,234 @@ function App() {
     return list;
   }, [tasks, query, filter]);
 
-  const handleSave = async (data) => {
-    if (editing) {
-      await updateTask(editing.id, data);
-      toast.success("Task updated");
-    } else {
-      await addTask(data);
-      toast.success("Task added");
+  const handleToggle = (task) =>
+    updateTask(task.id, { completed: !task.completed, completed_at: !task.completed ? new Date().toISOString() : null });
+
+  const pushToCalendar = async (task) => {
+    const email = localStorage.getItem("gcal_email");
+    if (!email) return toast.error("Connect Google Calendar first (Calendar tab)");
+    try {
+      await api.calendarPush(email, task.id);
+      toast.success("Added to Google Calendar 📅");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Failed to add to calendar");
     }
-    setModalOpen(false);
-    setEditing(null);
-  };
-
-  const handleToggle = async (task) => {
-    const completed = !task.completed;
-    await updateTask(task.id, {
-      completed,
-      completed_at: completed ? new Date().toISOString() : null,
-    });
-    if (completed) toast.success("Done! 🎯");
-  };
-
-  const handleDelete = async (task) => {
-    await deleteTask(task.id);
-    if (activeTask?.id === task.id) setActiveTask(null);
-    toast.success("Task removed");
-  };
-
-  const handleEdit = (task) => {
-    setEditing(task);
-    setModalOpen(true);
-  };
-
-  const handleStartTimer = (task) => {
-    setActiveTask(task);
-    document.getElementById("timer-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <div className="App grain min-h-screen relative" data-testid="app-root">
+    <>
+      <QuoteBanner />
+
+      <div className="flex items-end justify-between mb-4 gap-3 flex-wrap">
+        <div className="slide-up">
+          <div className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-60 mb-1">{todayDateLabel()}</div>
+          <h1 className="font-display text-5xl md:text-6xl leading-[0.95]">
+            <span className="gradient-text-pink">My Day</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            data-testid="online-status"
+            className="glass px-3 h-10 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
+            style={{ color: online ? "#5FE3A1" : "#FF6BB4" }}
+          >
+            {online ? <Wifi size={13} strokeWidth={3} /> : <WifiOff size={13} strokeWidth={3} />}
+            {online ? "Online" : "Offline"}
+          </div>
+          <button
+            data-testid="add-task-btn"
+            onClick={() => { setEditing(null); setModalOpen(true); }}
+            className="btn-pill btn-pink inline-flex items-center gap-2"
+          >
+            <Plus size={16} strokeWidth={3} /> Add Task
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-3 mb-5">
+        <StatChip label="Total" value={total} color="#fff" testid="stat-total" />
+        <StatChip label="Done" value={done} color="#5FE3A1" testid="stat-done" />
+        <StatChip label="Active" value={active} color="#FF6BB4" testid="stat-active" />
+      </div>
+
+      <div className="mb-5">
+        <div className="flex justify-between items-center mb-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider opacity-70">Daily Progress</span>
+          <span className="font-display text-sm gradient-text-pink">{pct}%</span>
+        </div>
+        <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+          <div data-testid="progress-bar-fill" className="h-full progress-fill" style={{ width: `${pct}%`, transition: "width .4s ease" }} />
+        </div>
+      </div>
+
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        <div className="seg">
+          {["all", "active", "done"].map((f) => (
+            <button
+              key={f}
+              data-testid={`filter-${f}-btn`}
+              onClick={() => setFilter(f)}
+              className={filter === f ? "active" : ""}
+            >
+              {f === "all" ? `All (${total})` : f === "active" ? `Active (${active})` : `Completed (${done})`}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-[160px]">
+          <Search size={15} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-60" />
+          <input
+            data-testid="search-input"
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="input-glass pl-9"
+            style={{ paddingTop: 8, paddingBottom: 8 }}
+          />
+        </div>
+      </div>
+
+      {activeTask && (
+        <div className="mb-5">
+          <TimerWidget task={activeTask} onClose={() => setActiveTask(null)} onLogSession={logSession} onUpdateTask={updateTask} />
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <div data-testid="empty-state" className="glass p-10 text-center opacity-70">
+          <Filter className="mx-auto mb-2 opacity-50" size={28} strokeWidth={2.5} />
+          {tasks.length === 0 ? "No tasks yet. Tap Add Task to begin." : "Nothing matches your filter."}
+        </div>
+      ) : (
+        <Reorder.Group
+          axis="y"
+          values={filtered}
+          onReorder={(newOrder) => {
+            if (filter === "all" && !query.trim()) reorderTasks(newOrder);
+            else {
+              const ids = new Set(newOrder.map((t) => t.id));
+              reorderTasks([...newOrder, ...tasks.filter((t) => !ids.has(t.id))]);
+            }
+          }}
+          data-testid="task-list"
+        >
+          {filtered.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onToggle={handleToggle}
+              onEdit={(t) => { setEditing(t); setModalOpen(true); }}
+              onDelete={(t) => { deleteTask(t.id); if (activeTask?.id === t.id) setActiveTask(null); }}
+              onStartTimer={(t) => setActiveTask(t)}
+              onShare={(t) => setShareTarget(t)}
+              onPushCalendar={pushToCalendar}
+              isActive={activeTask?.id === task.id}
+            />
+          ))}
+        </Reorder.Group>
+      )}
+    </>
+  );
+}
+
+function App() {
+  const { tasks, online, addTask, updateTask, deleteTask, reorderTasks, logSession } = useTasks();
+  const shopping = useShopping(online);
+  const meTime = useMeTime(online);
+
+  const [tab, setTab] = useState("tasks");
+  const [activeTask, setActiveTask] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [shareTarget, setShareTarget] = useState(null);
+
+  const handleSave = async (data) => {
+    if (editing) { await updateTask(editing.id, data); toast.success("Task updated"); }
+    else { await addTask(data); toast.success("Task added"); }
+    setModalOpen(false); setEditing(null);
+  };
+
+  return (
+    <div className="App min-h-screen relative" data-testid="app-root">
       <Toaster
-        position="bottom-right"
+        position="top-center"
         toastOptions={{
           style: {
-            background: "var(--surface)",
-            color: "var(--text)",
-            border: "2.5px solid var(--border-c)",
-            boxShadow: "4px 4px 0 0 var(--shadow-c)",
-            borderRadius: "8px",
+            background: "rgba(27, 10, 42, 0.95)",
+            color: "#F5EAF7",
+            border: "1px solid rgba(255,255,255,0.18)",
+            backdropFilter: "blur(12px)",
+            borderRadius: "14px",
             fontWeight: 700,
           },
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-5 md:px-10 py-8 relative z-10">
-        {/* Header */}
-        <header className="flex items-end justify-between mb-10 gap-4 flex-wrap">
-          <div className="slide-in">
-            <div className="text-xs font-bold uppercase tracking-[0.25em] opacity-60 mb-1">
-              {todayDateLabel()}
-            </div>
-            <h1 className="font-display text-5xl md:text-6xl leading-[0.95]">
-              TODAY's <span style={{ color: "var(--pink)" }}>GRIND</span>
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div
-              data-testid="online-status"
-              className="nb-border nb-shadow-sm rounded-md px-3 h-12 flex items-center gap-2 text-xs font-bold uppercase"
-              style={{
-                background: online ? "var(--green)" : "var(--pink)",
-                color: online ? "black" : "white",
-              }}
-            >
-              {online ? <Wifi size={14} strokeWidth={3} /> : <WifiOff size={14} strokeWidth={3} />}
-              {syncing ? "Syncing…" : online ? "Online" : "Offline"}
-            </div>
-            <ThemeToggle />
-            <button
-              data-testid="add-task-btn"
-              onClick={() => {
-                setEditing(null);
-                setModalOpen(true);
-              }}
-              className="nb-border nb-shadow rounded-md h-12 px-5 font-display inline-flex items-center gap-2 nb-press-lg"
-              style={{ background: "var(--yellow)", color: "black" }}
-            >
-              <Plus size={18} strokeWidth={3} />
-              New Task
-            </button>
-          </div>
-        </header>
-
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 lg:gap-8">
-          {/* LEFT: tasks */}
-          <section>
-            <div id="timer-anchor" />
-            {activeTask && (
-              <div className="mb-6">
-                <TimerWidget
-                  task={activeTask}
-                  onClose={() => setActiveTask(null)}
-                  onLogSession={logSession}
-                  onUpdateTask={updateTask}
-                />
-              </div>
-            )}
-
-            {/* Search + filter */}
-            <div className="flex gap-3 mb-5 flex-wrap">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search
-                  size={16}
-                  strokeWidth={3}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 opacity-60"
-                />
-                <input
-                  data-testid="search-input"
-                  placeholder="Search tasks, tags…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full nb-border rounded-md pl-10 pr-3 h-11 bg-[var(--surface)] font-semibold outline-none focus:ring-2 focus:ring-[var(--yellow)]"
-                />
-              </div>
-              <div className="flex nb-border rounded-md overflow-hidden">
-                {["all", "active", "done"].map((f) => (
-                  <button
-                    key={f}
-                    data-testid={`filter-${f}-btn`}
-                    onClick={() => setFilter(f)}
-                    className="px-4 h-11 font-display text-xs uppercase"
-                    style={{
-                      background: filter === f ? "var(--text)" : "var(--surface)",
-                      color: filter === f ? "var(--bg)" : "var(--text)",
-                      borderRight: f !== "done" ? "2.5px solid var(--border-c)" : "none",
-                    }}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* List */}
-            {filtered.length === 0 ? (
-              tasks.length === 0 ? (
-                <EmptyState
-                  onAdd={() => {
-                    setEditing(null);
-                    setModalOpen(true);
-                  }}
-                />
-              ) : (
-                <div className="nb-border rounded-md p-8 text-center opacity-70 bg-[var(--surface)]">
-                  <Filter className="mx-auto mb-2" size={28} strokeWidth={3} />
-                  No tasks match your filter.
-                </div>
-              )
-            ) : (
-              <Reorder.Group
-                axis="y"
-                values={filtered}
-                onReorder={(newOrder) => {
-                  // Merge filtered reorder back into full task list
-                  if (filter === "all" && !query.trim()) {
-                    reorderTasks(newOrder);
-                  } else {
-                    // Reorder only filtered; preserve others' relative order
-                    const otherIds = new Set(newOrder.map((t) => t.id));
-                    const merged = [
-                      ...newOrder,
-                      ...tasks.filter((t) => !otherIds.has(t.id)),
-                    ];
-                    reorderTasks(merged);
-                  }
-                }}
-                data-testid="task-list"
-              >
-                {filtered.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onToggle={handleToggle}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStartTimer={handleStartTimer}
-                    isActive={activeTask?.id === task.id}
-                  />
-                ))}
-              </Reorder.Group>
-            )}
-          </section>
-
-          {/* RIGHT: stats */}
-          <aside className="space-y-5">
-            <div className="nb-border nb-shadow rounded-md p-5 bg-[var(--surface)]">
-              <div className="flex items-center gap-2 mb-4">
-                <ListChecks size={18} strokeWidth={3} />
-                <h2 className="font-display text-xl">DAILY STATS</h2>
-              </div>
-              <StatsPanel tasks={tasks} />
-            </div>
-
-            <div
-              className="nb-border nb-shadow rounded-md p-5"
-              style={{ background: "var(--lilac)", color: "black" }}
-            >
-              <h3 className="font-display text-lg mb-2">QUICK TIP</h3>
-              <p className="text-sm font-semibold leading-snug">
-                Tap{" "}
-                <span
-                  className="px-1.5 py-0.5 nb-border rounded-sm"
-                  style={{ background: "var(--green)", fontWeight: 800 }}
+      <div className="max-w-3xl mx-auto px-4 md:px-6 pt-6 pb-32 relative z-10">
+        {tab === "tasks" && (
+          <TasksView
+            tasks={tasks}
+            online={online}
+            addTask={addTask}
+            updateTask={updateTask}
+            deleteTask={deleteTask}
+            reorderTasks={reorderTasks}
+            logSession={logSession}
+            activeTask={activeTask}
+            setActiveTask={setActiveTask}
+            setModalOpen={setModalOpen}
+            setEditing={setEditing}
+            setShareTarget={setShareTarget}
+          />
+        )}
+        {tab === "shopping" && (
+          <>
+            <ShoppingPage {...shopping} onClearPurchased={shopping.clearPurchased} />
+            {shopping.items.length > 0 && (
+              <div className="mt-4">
+                <button
+                  data-testid="share-shopping-btn"
+                  onClick={() => setShareTarget({ __list: shopping.items.filter((i) => !i.purchased).map((i) => `${i.name} ×${i.qty}`), __title: "Shopping list" })}
+                  className="btn-pill btn-ghost"
                 >
-                  ▶
-                </span>{" "}
-                on any task to start a focused timer. Pomodoro mode auto-cycles work + breaks.
-              </p>
-            </div>
-
-            <div
-              className="nb-border nb-shadow rounded-md p-5"
-              style={{ background: "var(--text)", color: "var(--bg)" }}
-            >
-              <h3 className="font-display text-lg mb-2">OFFLINE MODE</h3>
-              <p className="text-sm font-semibold leading-snug opacity-90">
-                Everything saves to your device first, then syncs when you're back online.
-              </p>
-            </div>
-          </aside>
-        </div>
+                  Share list
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        {tab === "metime" && <MeTimePage {...meTime} />}
+        {tab === "timer" && (
+          <>
+            <QuoteBanner />
+            <h1 className="font-display text-4xl md:text-5xl mb-3 gradient-text-pink">Timer</h1>
+            <p className="text-sm opacity-70 mb-5">Pick a task from the Tasks tab and tap ▶ to focus.</p>
+            {activeTask ? (
+              <TimerWidget task={activeTask} onClose={() => setActiveTask(null)} onLogSession={logSession} onUpdateTask={updateTask} />
+            ) : (
+              <div className="glass p-10 text-center opacity-70" data-testid="timer-empty">
+                No active timer. Go to <button className="underline" onClick={() => setTab("tasks")}>Tasks</button> and start one.
+              </div>
+            )}
+          </>
+        )}
+        {tab === "calendar" && <CalendarPage />}
       </div>
+
+      <BottomNav active={tab} onChange={setTab} />
 
       <TaskFormModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-        }}
+        onClose={() => { setModalOpen(false); setEditing(null); }}
         onSave={handleSave}
         initial={editing}
+      />
+
+      <ShareModal
+        open={!!shareTarget}
+        onClose={() => setShareTarget(null)}
+        task={shareTarget && !shareTarget.__list ? shareTarget : null}
+        list={shareTarget?.__list}
+        title={shareTarget?.__title || shareTarget?.title}
       />
     </div>
   );

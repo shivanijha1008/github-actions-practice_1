@@ -32,7 +32,8 @@ export function useTasks() {
         else if (op.type === "delete") await api.deleteTask(op.id);
         else if (op.type === "reorder") await api.reorder(op.items);
         else if (op.type === "session") await api.logSession(op.session);
-      } catch {
+      } catch (err) {
+        console.warn(`[sync] op '${op.type}' failed, will retry:`, err?.message || err);
         remaining.push(op);
       }
     }
@@ -45,8 +46,9 @@ export function useTasks() {
       await flushPending();
       const serverTasks = await api.listTasks();
       persist(serverTasks);
-    } catch {
-      // stay offline-only
+    } catch (err) {
+      // stay offline-only — backend unreachable
+      console.warn("[sync] refresh skipped:", err?.message || err);
     } finally {
       setSyncing(false);
     }
