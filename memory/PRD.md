@@ -52,3 +52,11 @@ User uploaded a reference design (dark glass/glow, magenta-purple gradient, pill
 - P1: Recurring tasks auto-reset at midnight
 - P2: Browser Notification API for background timer
 - P2: CSV/JSON export, keyboard shortcuts
+
+## Iteration 5 (Feb 2026)
+- **Google Calendar removed** per user request (backend endpoints kept but UI no longer calls them; Calendar tab gone)
+- **Streak badge** — flame icon + day counter; localStorage `scheduler.streak.v1`; bumps on task completion; auto-breaks if >1 day gap
+- **Midnight recurring reset** — once per calendar day, recurring tasks completed=true get reset to completed=false, elapsed=0; idempotency via `scheduler.lastResetDate`
+- **Smart suggestions** — 12-suggestion bank with time-of-day filters; renders 4 chips above task list; one tap auto-creates task with title + duration + timer mode
+
+Bottom nav now: Tasks · Shopping · Me Time (3 tabs)
