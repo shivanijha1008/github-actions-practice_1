@@ -1,11 +1,18 @@
 name: Daily Scheduler
 
-on: workflow_dispatch
-
+on: 
+  push:
+    branches: "main"
+    
 jobs: 
-  
-  Instructions:
+  build-and-push:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Open-instructions
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install python
         run: echo "Hello, Welcome to Daily Scheduler"
